@@ -66,7 +66,7 @@ period, remembered across sessions.
 See the [repo README](../README.md#install), using this folder:
 
 ```json
-"CLAUDE_CODE_PLUGIN_DIRS": "/Users/<you>/personal/claude-mods/claude-usage-meter"
+"CLAUDE_CODE_PLUGIN_DIRS": "/path/to/claude-mods/claude-usage-meter"
 ```
 
 ## How it works

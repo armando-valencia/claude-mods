@@ -13,10 +13,11 @@ behaviour. Each folder in this repo is one mod, with its own README.
 Clone the repo:
 
 ```bash
-git clone git@github.com:armando-valencia/claude-mods.git ~/personal/claude-mods
+git clone https://github.com/armando-valencia/claude-mods.git
 ```
 
-Then point Claude Code at each mod's folder you want.
+Then point Claude Code at each mod's folder you want, by its absolute path
+(`/path/to/claude-mods` below stands for wherever you cloned it).
 
 **Every session**: list the folders in the `env` block of
 `~/.claude/settings.json`, separated by `:`:
@@ -24,12 +25,12 @@ Then point Claude Code at each mod's folder you want.
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "/Users/<you>/personal/claude-mods/<mod-folder>:/Users/<you>/personal/claude-mods/<another-mod-folder>"
+    "CLAUDE_CODE_PLUGIN_DIRS": "/path/to/claude-mods/<mod-folder>:/path/to/claude-mods/<another-mod-folder>"
   }
 }
 ```
 
-**One session**: `claude --plugin-dir ~/personal/claude-mods/<mod-folder>`
+**One session**: `claude --plugin-dir /path/to/claude-mods/<mod-folder>`
 (repeat the flag for several).
 
 An interactive session watches these folders and reloads a mod when its files
