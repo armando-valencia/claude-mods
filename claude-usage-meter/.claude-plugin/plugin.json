@@ -1,0 +1,6 @@
+{
+  "name": "usage-meter",
+  "version": "0.1.0",
+  "description": "Always-visible plan usage meters (session and weekly limits) above the prompt, with warnings at 80/90/100%",
+  "types": "./types/index.d.ts"
+}
