@@ -4,10 +4,10 @@ A Claude Code mod that keeps your plan usage limits on screen. A bordered card
 sits above the prompt and stays there while prompts and agents run:
 
 ```
-╭─────────────────────────────────────────────────────────────────────────────────╮
+╭──────────────────────────────────────────────────────────────────────────────────╮
 │ ◆ Opus 5.5 · effort high                            ~/work/my-repo  ⎇ feature/x │
-│ Session ━━────────  18%  resets 2h 13m    Week    ━━━━──────  43%  resets 3d 6h │
-╰─────────────────────────────────────────────────────────────────────────────────╯
+│ Session ━━────────  18%  resets 2h 13m    Week    ━━━━──────  43%  resets 3d 6h  │
+╰──────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 In compact mode (`/usage-meter compact`) it is one line:
