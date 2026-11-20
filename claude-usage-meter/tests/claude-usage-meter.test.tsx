@@ -96,8 +96,10 @@ const measure = (rateLimits: SessionRateLimit[]) => ({
 const start = { cwd: '/', surface: 'terminal', isInteractive: true } as const
 
 test('draws the card: model, folder, and both meters, on terminal and desktop', async ($, on) => {
-  engine(on, { start: limits(3, 13) })
+  const { clock } = engine(on, { start: limits(3, 13) })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...BAND, surface })
@@ -112,6 +114,8 @@ test('draws the card: model, folder, and both meters, on terminal and desktop', 
 test('the countdown moves with the clock between replies', async ($, on) => {
   const { clock } = engine(on, { start: limits(3, 13) })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
   await clock.advance(10 * 60_000)
 
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
@@ -120,8 +124,10 @@ test('the countdown moves with the clock between replies', async ($, on) => {
 })
 
 test('a model switch by command shows in the header', async ($, on) => {
-  const { session } = engine(on, { start: limits(3, 13) })
+  const { session, clock } = engine(on, { start: limits(3, 13) })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   session.model = 'claude-fable-5-1[1m]'
   await $.command.run({
@@ -137,8 +143,10 @@ test('a model switch by command shows in the header', async ($, on) => {
 })
 
 test('the effort shows from settings, by id or alias, and follows /effort', async ($, on) => {
-  const { session } = engine(on, { start: limits(3, 13) })
+  const { session, clock } = engine(on, { start: limits(3, 13) })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
   const run = (command: string, args: string) =>
     $.command.run({
       command,
@@ -171,9 +179,11 @@ test('the effort shows from settings, by id or alias, and follows /effort', asyn
 })
 
 test('the header shows the branch, a detached HEAD, and none outside a repo', async ($, on) => {
-  const { session } = engine(on, { start: limits(3, 13) })
+  const { session, clock } = engine(on, { start: limits(3, 13) })
   session.branch = 'feature/DFA-123-a-very-long-branch-name-that-keeps-going'
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   let ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect(
@@ -206,11 +216,13 @@ test('the header shows the branch, a detached HEAD, and none outside a repo', as
 })
 
 test('a narrow band stacks the meters and shortens the folder', async ($, on) => {
-  engine(on, {
+  const { clock } = engine(on, {
     start: limits(3, 13),
     cwd: `${HOME}/personal/claude-mods/claude-usage-meter/some/deep/nested/folder`,
   })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   const ui = await $.ui.mount({ ...narrow(50), surface: 'terminal' })
   // 46 columns inside the border, less the model, effort and branch, leave 12.
@@ -223,8 +235,10 @@ test('a narrow band stacks the meters and shortens the folder', async ($, on) =>
 })
 
 test('warns once per threshold per reset period', async ($, on) => {
-  const { toasts } = engine(on)
+  const { toasts, clock } = engine(on)
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   await $.session.measure(measure(limits(50, 79)))
   expect(toasts).toEqual([])
@@ -242,8 +256,10 @@ test('warns once per threshold per reset period', async ($, on) => {
 })
 
 test('the command hides, compacts and reports', async ($, on) => {
-  engine(on, { start: limits(3, 13) })
+  const { clock } = engine(on, { start: limits(3, 13) })
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
   const run = (args: string) =>
     $.command.run({
       command: 'usage-meter',
@@ -277,8 +293,10 @@ test('the command hides, compacts and reports', async ($, on) => {
 })
 
 test('before any reading the card says why the meters are missing', async ($, on) => {
-  engine(on)
+  const { clock } = engine(on)
   await $.session.start(start)
+  // The header and first readings are read unawaited: let them land.
+  await clock.settle()
 
   let ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect(await ui.find({ type: 'Text', text: /◆ Opus 5\.5/ })).toBeDefined()

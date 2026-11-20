@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Color, EngineInterface, Register } from 'claude-code'
+import type { Color, EngineInterface, Register, Timer } from 'claude-code'
 
 import type { MeterMode, UsageWindow } from '../types'
 
@@ -257,35 +257,65 @@ const layoutMeters = (list: UsageWindow[], inner: number, at: number) => {
   return { kind: 'none' as const, bar: 0, labelWidth, tailWidth }
 }
 
+/** The readings the session already holds at its start; a live measurement wins. */
+const loadUsage = async ($: EngineInterface) => {
+  const usage = await $.session.usage()
+  if (usage.rateLimits.length === 0 || (await read($, hasMeasured))) return
+  await update($, windows, () => toWindows(usage.rateLimits))
+}
+
+// One ticker per copy of the module: a later session.start (a resume, a
+// re-enable) replaces it. A hot reload cancels the old copy's timers itself.
+let ticker: Timer | undefined
+let isTicking = false
+
+/** Moves the countdowns on. Reads the time and nothing else; never rejects. */
+const tick = async ($: EngineInterface) => {
+  if (isTicking) return
+  isTicking = true
+  try {
+    const t = await $.clock.now()
+    await update($, now, () => t)
+  } catch {
+    // The next tick retries.
+  } finally {
+    isTicking = false
+  }
+}
+
+const startTicker = ($: EngineInterface) => {
+  ticker?.cancel()
+  ticker = $.clock.every(TICK_MS, () => {
+    void tick($)
+  })
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: COMMAND,
-      description: 'Plan usage meters: show readings, or set full | compact | hide',
-      argumentHint: '[full|compact|hide]',
-    })
+    try {
+      await $.command.register({
+        name: COMMAND,
+        description: 'Plan usage meters: show readings, or set full | compact | hide',
+        argumentHint: '[full|compact|hide]',
+      })
 
-    const saved = await $.store.get('mode')
-    await update($, mode, () => parseMode(saved))
+      const saved = await $.store.get('mode')
+      await update($, mode, () => parseMode(saved))
 
-    const at = await $.clock.now()
-    await update($, now, () => at)
-    await refreshContext($)
-    const usage = await $.session.usage()
-    if (usage.rateLimits.length > 0) {
-      await update($, windows, () => toWindows(usage.rateLimits))
+      const at = await $.clock.now()
+      await update($, now, () => at)
+    } catch (error) {
+      // A failed step must not hold the session: the band draws from defaults.
+      $.ui.log(`usage-meter: setup failed: ${String(error)}`, { to: 'debug' })
     }
 
-    // Keeps the countdowns moving between replies, and the model and folder current.
-    $.clock.every(TICK_MS, () => {
-      void $.clock
-        .now()
-        .then(t => update($, now, () => t))
-        .then(() => refreshContext($))
-    })
+    // Neither read holds the session's start: each lands when it arrives.
+    void refreshContext($).catch(() => undefined)
+    void loadUsage($).catch(() => undefined)
+    startTicker($)
 
     return next(e)
-  })
+  }).catch(($, e, next) => next(e))
 
   on('session.measure', async ($, e, next) => {
     const at = await $.clock.now()
